@@ -1,0 +1,10 @@
+streamlit
+streamlit-autorefresh
+pandas
+numpy
+requests
+plotly
+scikit-learn
+scipy
+TA-Lib
+torch
