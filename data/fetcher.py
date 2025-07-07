@@ -30,3 +30,20 @@ def fetch_enhanced_data(symbol: str, interval: str, limit: int) -> pd.DataFrame:
     df["volume_ratio"]  = df.volume / df.volume_sma
     df.dropna(inplace=True)
     return df.reset_index(drop=True)
+
+def fetch_multi_timeframe_data(symbol, intervals, history_size):
+    dfs = {}
+    for interval in intervals:
+        df = fetch_enhanced_data(symbol, interval, history_size * 3)
+        if not df.empty:
+            # Preserve 'datetime' without suffix to allow merging
+            columns = []
+            for col in df.columns:
+                if col == "datetime":
+                    columns.append(col)
+                else:
+                    columns.append(f"{col}_{interval}")
+            df.columns = columns
+            dfs[interval] = df
+    return dfs
+
