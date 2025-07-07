@@ -6,5 +6,5 @@ requests
 plotly
 scikit-learn
 scipy
-TA-Lib
+pandas_ta
 torch
