@@ -6,7 +6,7 @@ from utils import safe_get
 @cache_data(ttl=30)
 def fetch_enhanced_data(symbol: str, interval: str, limit: int) -> pd.DataFrame:
     """Fetch kline data from Binance + compute TA indicators."""
-    url = f"https://api.binance.com/api/v3/klines?symbol={symbol}&interval={interval}&limit={limit}"
+    url = f"https://api.binance.me/api/v3/klines?symbol={symbol}&interval={interval}&limit={limit}"
     raw = safe_get(url)
     cols = ["open_time", "o", "h", "l", "c", "v", "close_time", "qa", "tr", "tba", "tqa", "ignore"]
     df = pd.DataFrame(raw, columns=cols)
