@@ -8,36 +8,47 @@ def fetch_enhanced_data(symbol: str, interval: str, limit: int) -> pd.DataFrame:
     """Fetch kline data from Binance + compute TA indicators."""
     url = f"https://api.binance.me/api/v3/klines?symbol={symbol}&interval={interval}&limit={limit}"
     raw = safe_get(url)
+    
+    # Handle empty response
+    if not raw:
+        return pd.DataFrame()
+    
     cols = ["open_time", "o", "h", "l", "c", "v", "close_time", "qa", "tr", "tba", "tqa", "ignore"]
     df = pd.DataFrame(raw, columns=cols)
     df["datetime"] = pd.to_datetime(df.open_time, unit="ms")
     df[["open", "high", "low", "close", "volume"]] = df[["o", "h", "l", "c", "v"]].astype(float)
-
+    
     # Technical Indicators using pandas-ta
     df["SMA_10"] = ta.sma(df["close"], length=10)
     df["SMA_20"] = ta.sma(df["close"], length=20)
     df["EMA_12"] = ta.ema(df["close"], length=12)
     df["EMA_26"] = ta.ema(df["close"], length=26)
-
+    
     rsi = ta.rsi(df["close"], length=14)
     df["RSI"] = rsi
-
+    
+    # Fixed MACD calculation with proper null checking
     macd = ta.macd(df["close"])
-    if not macd.empty:
+    if macd is not None and not macd.empty:
         df["MACD"] = macd["MACD_12_26_9"]
         df["MACD_signal"] = macd["MACDs_12_26_9"]
     else:
-        df["MACD"] = df["MACD_signal"] = None
-
-    df["ATR"] = ta.atr(df["high"], df["low"], df["close"], length=14)
-    df["ADX"] = ta.adx(df["high"], df["low"], df["close"], length=14)["ADX_14"]
-
+        df["MACD"] = None
+        df["MACD_signal"] = None
+    
+    # Handle potential None returns from other indicators
+    atr = ta.atr(df["high"], df["low"], df["close"], length=14)
+    df["ATR"] = atr if atr is not None else None
+    
+    adx = ta.adx(df["high"], df["low"], df["close"], length=14)
+    df["ADX"] = adx["ADX_14"] if adx is not None and not adx.empty else None
+    
     # Price action features
     df["return_1"] = df["close"].pct_change(1)
     df["volatility"] = df["return_1"].rolling(20).std()
     df["volume_sma"] = df["volume"].rolling(20).mean()
     df["volume_ratio"] = df["volume"] / df["volume_sma"]
-
+    
     df.dropna(inplace=True)
     return df.reset_index(drop=True)
 
